@@ -1,15 +1,14 @@
 mod chars;
 mod palette;
 
+use callbacks::DrawAction;
 use config::*;
 use std::mem;
-use DrawAction;
 
 pub struct Screen {
     pub pixels: [u8; SCREEN_PIXELS as usize],
     pub rgb_pixels: [u8; SCREEN_RGB_PIXELS as usize],
     pub current_color: u8,
-    pub callback_draw: Option<Box<dyn FnMut(DrawAction)>>,
     pub redraw: bool,
 }
 
@@ -19,7 +18,6 @@ impl Default for Screen {
             pixels: [0; SCREEN_PIXELS as usize],
             rgb_pixels: [0; SCREEN_RGB_PIXELS as usize],
             current_color: 0,
-            callback_draw: None,
             redraw: true,
         }
     }
@@ -28,17 +26,6 @@ impl Default for Screen {
 impl Screen {
     pub fn new() -> Screen {
         Screen::default()
-    }
-
-    pub fn draw_action(&mut self, action: DrawAction) {
-        match self.callback_draw {
-            Some(ref mut draw) => draw(action),
-            None => (),
-        };
-    }
-
-    pub fn set_draw_callback(&mut self, c: Box<dyn FnMut(DrawAction)>) {
-        self.callback_draw = Some(c);
     }
 
     // pub fn put_string(&mut self, string: String, mut x: u16, y: u16, color: u8) {

@@ -12,6 +12,7 @@ mod text_buffer;
 mod variables;
 mod vm;
 
+pub mod callbacks;
 pub mod config;
 pub mod enums;
 pub mod nodes;
@@ -48,11 +49,6 @@ pub fn parse(fazic: &mut ::Fazic, input: &str) {
         }
     };
 }
-pub enum DrawAction {
-    PutPixel(i32, i32, u8, u8, u8),
-    Clear(u8, u8, u8),
-    Redraw(),
-}
 
 pub struct Fazic {
     screen: screen::Screen,
@@ -65,6 +61,7 @@ pub struct Fazic {
     lines: lines::Lines,
     instant: Instant,
     rng: XorShiftRng,
+    callbacks: callbacks::Callbacks
 }
 
 impl Default for Fazic {
@@ -80,6 +77,7 @@ impl Default for Fazic {
             lines: lines::Lines::new(),
             instant: Instant::now(),
             rng: SeedableRng::from_seed([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]),
+            callbacks: callbacks::Callbacks::new()
         }
     }
 }
@@ -91,8 +89,8 @@ impl Fazic {
 
     // Callbacks
 
-    pub fn set_draw_callback(&mut self, c: Box<dyn FnMut(DrawAction)>) {
-        self.screen.set_draw_callback(c);
+    pub fn set_draw_callback(&mut self, cb: Box<dyn FnMut(callbacks::DrawAction)>) {
+        self.callbacks.set_draw(cb);
     }
 
     fn text_mode(&mut self) -> bool {
@@ -188,10 +186,7 @@ impl Fazic {
         if self.text_mode() && self.text_buffer.changed {
             self.screen.draw_text_buffer(&self.text_buffer);
             self.text_buffer.refreshed();
-            match self.screen.callback_draw {
-                Some(ref mut draw) => draw(DrawAction::Redraw()),
-                None => (),
-            };
+            self.callbacks.call_draw(callbacks::DrawAction::Redraw());
         };
     }
 }
